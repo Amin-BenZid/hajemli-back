@@ -6,18 +6,5 @@ import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
-  @Post()
-  async create(@Body() createSubscriptionDto: CreateSubscriptionDto) {
-    return this.subscriptionService.create(createSubscriptionDto);
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') subscriptionId: string) {
-    return this.subscriptionService.findOne(subscriptionId);
-  }
-
-  @Get()
-  async findAll() {
-    return this.subscriptionService.findAll();
-  }
+ 
 }

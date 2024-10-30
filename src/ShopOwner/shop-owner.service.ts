@@ -7,6 +7,8 @@ import { ShopOwner } from './shop-owner.schema';
 import { CreateShopOwnerDto } from './dto/create-shop-owner.dto';
 import { Shop } from 'src/Shop/shop.schema';
 import { MailService } from 'src/Mail/Mail.service';
+import { randomBytes } from 'crypto';
+
 
 @Injectable()
 export class ShopOwnerService {
@@ -30,9 +32,15 @@ export class ShopOwnerService {
     }
 
     async createShop(ownerId: string, shopDetails: Partial<Shop>): Promise<Shop> {
-        const newShop = new this.shopModel({ ...shopDetails, owner_id: ownerId });
+        const shopId = this.generateShopId();
+        const newShop = new this.shopModel({ ...shopDetails, owner_id: ownerId, shop_id: shopId });
         await newShop.save();
         return newShop;
+    }
+    
+    // Helper function to generate a unique 4-character alphanumeric ID
+    private generateShopId(): string {
+        return randomBytes(2).toString('hex').toUpperCase(); // 2 bytes to create 4 hex characters
     }
 
     async findOne(shopOwnerId: string): Promise<ShopOwner> {
