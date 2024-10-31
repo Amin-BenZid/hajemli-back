@@ -19,6 +19,10 @@ export class ClientService {
     return client;
   }
 
+  async updateShopId(clientId: string, shopId: string): Promise<Client> {
+    return this.clientModel.findByIdAndUpdate(clientId, { shop_id: shopId }, { new: true });
+  }
+
   async findAll(): Promise<Client[]> {
     return this.clientModel.find().exec();
   }

@@ -12,6 +12,9 @@ export class Client extends Document {
   @Prop({ required: true })
   last_name: string;
 
+  @Prop({ required: false })
+  shop_id: string;
+
   @Prop({ required: true })
   phone: string;
 

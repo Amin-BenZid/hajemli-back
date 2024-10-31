@@ -13,18 +13,44 @@ export class PackageService {
   ) {}
 
   async create(name: string, shop_owner_id: string): Promise<Package> {
-    if (name !== 'par mois' && name !== 'par personne') {
+    // Validate the name attribute
+    const validNames = ['par mois', 'par personne', 'par 3 mois', 'par ans'];
+    if (!validNames.includes(name)) {
       throw new BadRequestException(
-        'The name attribute must be either "par mois" or "par personne"',
+        'The name attribute must be either "par mois", "par personne", "par 3 mois", or "par ans"',
       );
     }
-
+  
+    // Set price and duration based on the name attribute
+    let price: number;
+    let duration: string;
+  
+    switch (name) {
+      case 'par mois':
+        price = 34.9;
+        duration = '1 month';
+        break;
+      case 'par personne':
+        price = 0.15;
+        duration = '1 person';
+        break;
+      case 'par 3 mois':
+        price = 99.9;
+        duration = '3 months';
+        break;
+      case 'par ans':
+        price = 360;
+        duration = '1 year';
+        break;
+      default:
+        throw new BadRequestException('Invalid package name'); // This should never be hit due to previous validation
+    }
     const packageData = {
       package_id: this.generatePackageId(),
       name,
       shop_owner_id,
-      price: name === 'par mois' ? 30 : 2,
-      duration: '1 month',
+      price,
+      duration,
     };
 
     const createdPackage = new this.packageModel(packageData);

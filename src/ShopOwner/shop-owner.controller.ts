@@ -40,4 +40,13 @@ export class ShopOwnerController {
         }
         return shops;
     }
+
+    @Get(':id/client')
+    async sendauclient(@Param('id') shopOwnerId: string): Promise<string[]> {
+        const shops = await this.shopOwnerService.sendauclient(shopOwnerId);
+        if (!shops || shops.length === 0) {
+            throw new NotFoundException(`No shops found for Shop Owner with ID ${shopOwnerId}`);
+        }
+        return shops;
+    }
 }

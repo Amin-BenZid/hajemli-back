@@ -45,7 +45,7 @@ export class ShopOwnerService {
 
     async findOne(shopOwnerId: string): Promise<ShopOwner> {
         const shopOwner = await this.shopOwnerModel
-            .findOne({ shop_owner_id: shopOwnerId })
+            .findOne({ owner_id: shopOwnerId })
             .populate('package_id');
         if (!shopOwner) throw new NotFoundException(`Shop Owner with ID ${shopOwnerId} not found`);
         return shopOwner;
@@ -56,12 +56,22 @@ export class ShopOwnerService {
     }
 
     async findShopsByOwnerId(shopOwnerId: string): Promise<string[]> {
-        const shops = await this.shopModel.find({ shop_owner_id: shopOwnerId }).select('shop_id').exec();
+        const shops = await this.shopModel.find({ owner_id: shopOwnerId }).select('shop_id').exec();
         if (!shops || shops.length === 0) {
             throw new NotFoundException(`No shops found for Shop Owner with ID ${shopOwnerId}`);
         }
         return shops.map(shop => `https://yourdomain.com/shops/${shop.shop_id}`);
-    }
+    }//pour envoyer au barber
+
+    async sendauclient(shopOwnerId: string): Promise<string[]> {
+        const shops = await this.shopModel.find({ owner_id: shopOwnerId }).select('shop_id').exec();
+        if (!shops || shops.length === 0) {
+            throw new NotFoundException(`No shops found for Shop Owner with ID ${shopOwnerId}`);
+        }
+        return shops.map(shop => `https://client.com/shops/${shop.shop_id}`);
+    }//pour envoyer au client
+
+
     async validateShopOwner(mail: string, password: string): Promise<ShopOwner | null> {
         const shopOwner = await this.shopOwnerModel.findOne({ mail }); // Use appropriate field to find shop owner
         if (shopOwner && await bcrypt.compare(password, shopOwner.password)) {
