@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, NotFoundException } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { Service } from 'src/Service/service.schema';
 
 @Controller('appointments')
 export class AppointmentController {
@@ -14,6 +15,15 @@ export class AppointmentController {
   @Get(':id')
   async findOne(@Param('id') appointmentId: string) {
     return this.appointmentService.findOne(appointmentId);
+  }
+
+  @Get('services/:clientId')
+  async getServiceDetailsByClientId(@Param('clientId') clientId: string): Promise<Service[]> {
+    try {
+      return await this.appointmentService.findServiceDetailsByClientId(clientId);
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   @Get()

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, NotFoundException } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { CreateShopDto } from './dto/create-shop.dto';
 
@@ -14,6 +14,15 @@ export class ShopController {
   @Get(':id')
   async findOne(@Param('id') shopId: string) {
     return this.shopService.findOne(shopId);
+  }
+
+  @Get(':shopId/details')
+  async getShopDetailsWithOwnerName(@Param('shopId') shopId: string) {
+    try {
+      return await this.shopService.getShopDetailsWithOwnerName(shopId);
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
   }
 
   @Get()

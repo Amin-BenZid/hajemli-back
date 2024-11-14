@@ -8,7 +8,7 @@ import { CreateShopOwnerDto } from './dto/create-shop-owner.dto';
 import { Shop } from 'src/Shop/shop.schema';
 import { MailService } from 'src/Mail/Mail.service';
 import { randomBytes } from 'crypto';
-
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class ShopOwnerService {
@@ -16,7 +16,7 @@ export class ShopOwnerService {
         @InjectModel(ShopOwner.name) private shopOwnerModel: Model<ShopOwner>,
         @InjectModel(Shop.name) private shopModel: Model<Shop>,
         private mailService: MailService,
-
+        private jwtService: JwtService, // Inject JwtService for JWT operations
     ) {}
 
     async create(createShopOwnerDto: CreateShopOwnerDto): Promise<ShopOwner> {
@@ -37,7 +37,7 @@ export class ShopOwnerService {
         await newShop.save();
         return newShop;
     }
-    
+
     // Helper function to generate a unique 4-character alphanumeric ID
     private generateShopId(): string {
         return randomBytes(2).toString('hex').toUpperCase(); // 2 bytes to create 4 hex characters
@@ -61,7 +61,7 @@ export class ShopOwnerService {
             throw new NotFoundException(`No shops found for Shop Owner with ID ${shopOwnerId}`);
         }
         return shops.map(shop => `https://yourdomain.com/shops/${shop.shop_id}`);
-    }//pour envoyer au barber
+    } // pour envoyer au barber
 
     async sendauclient(shopOwnerId: string): Promise<string[]> {
         const shops = await this.shopModel.find({ owner_id: shopOwnerId }).select('shop_id').exec();
@@ -69,8 +69,7 @@ export class ShopOwnerService {
             throw new NotFoundException(`No shops found for Shop Owner with ID ${shopOwnerId}`);
         }
         return shops.map(shop => `https://client.com/shops/${shop.shop_id}`);
-    }//pour envoyer au client
-
+    } // pour envoyer au client
 
     async validateShopOwner(mail: string, password: string): Promise<ShopOwner | null> {
         const shopOwner = await this.shopOwnerModel.findOne({ mail }); // Use appropriate field to find shop owner
@@ -80,52 +79,55 @@ export class ShopOwnerService {
         }
         return null; // Invalid mail or password
     }
-    // Example login method in your controller
-async login(mail: string, password: string) {
-    const shopOwner = await this.validateShopOwner(mail, password);
-    if (!shopOwner) {
-        throw new UnauthorizedException('Invalid mail or password');
+
+    // Method to handle login and generate JWT
+    async login(mail: string, password: string) {
+        const shopOwner = await this.validateShopOwner(mail, password);
+        if (!shopOwner) {
+            throw new UnauthorizedException('Invalid mail or password');
+        }
+
+        // Generate JWT token
+        const payload = { owner_id: shopOwner.owner_id, mail: shopOwner.mail }; // Adjust based on your ShopOwner schema
+        const token = this.jwtService.sign(payload);
+
+        return { token, shopOwner }; // Return token and shopOwner data
     }
 
-    // Proceed with generating a JWT or similar logic
-}
-async findByMail(mail: string): Promise<ShopOwner | null> {
-    const result = await this.shopOwnerModel.findOne({ mail }).lean();
-    return result ? (result as ShopOwner) : null; // Cast to ShopOwner
-}
-
-
-
-
-  async requestPasswordReset(mail: string): Promise<void> {
-    const user = await this.shopOwnerModel.findOne({ mail }).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
+    async findByMail(mail: string): Promise<ShopOwner | null> {
+        const result = await this.shopOwnerModel.findOne({ mail }).lean();
+        return result ? (result as ShopOwner) : null; // Cast to ShopOwner
     }
 
-    // Generate a reset token and expiration date
-    const resetToken = crypto.randomBytes(4).toString('hex');
-    user.resetToken = resetToken;
-    user.resetTokenExpiration = new Date(Date.now() + 3600000); // Token valid for 1 hour
-    await user.save();
+    async requestPasswordReset(mail: string): Promise<void> {
+        const user = await this.shopOwnerModel.findOne({ mail }).exec();
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
 
-    // Send reset token to user
-    await this.mailService.sendUserPassword(mail, resetToken);
-  }
+        // Generate a reset token and expiration date
+        const resetToken = crypto.randomBytes(4).toString('hex');
+        user.resetToken = resetToken;
+        user.resetTokenExpiration = new Date(Date.now() + 3600000); // Token valid for 1 hour
+        await user.save();
 
-  async resetPassword(resetToken: string, newPassword: string): Promise<void> {
-    const user = await this.shopOwnerModel.findOne({
-      resetToken,
-      resetTokenExpiration: { $gte: Date.now() },
-    }).exec();
-
-    if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
+        // Send reset token to user
+        await this.mailService.sendUserPassword(mail, resetToken);
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.resetToken = undefined;
-    user.resetTokenExpiration = undefined;
-    await user.save();
-  }
+    async resetPassword(resetToken: string, newPassword: string): Promise<void> {
+        const user = await this.shopOwnerModel.findOne({
+            resetToken,
+            resetTokenExpiration: { $gte: Date.now() },
+        }).exec();
+
+        if (!user) {
+            throw new BadRequestException('Invalid or expired reset token');
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetToken = undefined;
+        user.resetTokenExpiration = undefined;
+        await user.save();
+    }
 }

@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Get, Param, NotFoundException, UnauthorizedException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, NotFoundException, UnauthorizedException, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { ShopOwnerService } from './shop-owner.service';
 import { CreateShopOwnerDto } from './dto/create-shop-owner.dto';
 import { Shop } from 'src/Shop/shop.schema';
+import { ShopOwner } from './shop-owner.schema';
 
 
 @Controller('shop-owners')
@@ -23,6 +24,25 @@ export class ShopOwnerController {
     return this.shopOwnerService.createShop(ownerId, shopDetails);
   }
  
+  @Post('login')
+    async login(@Body() loginDto: { mail: string; password: string }): Promise<{ token: string; shopOwner: ShopOwner }> {
+        return this.shopOwnerService.login(loginDto.mail, loginDto.password);
+    }
+
+    // Request password reset
+    @Post('reset-password')
+    async requestPasswordReset(@Body('mail') mail: string): Promise<void> {
+        return this.shopOwnerService.requestPasswordReset(mail);
+    }
+
+    // Reset password using a reset token
+    @Patch('reset-password')
+    async resetPassword(
+        @Body() resetDto: { resetToken: string; newPassword: string }
+    ): Promise<void> {
+        return this.shopOwnerService.resetPassword(resetDto.resetToken, resetDto.newPassword);
+    }
+
   @Get(':id')
   async findOne(@Param('id') shopOwnerId: string) {
     return this.shopOwnerService.findOne(shopOwnerId);
