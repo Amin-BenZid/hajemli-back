@@ -46,4 +46,10 @@ async loginWithGoogle(@Body('token') token: string) {
   async findAll() {
     return this.barberService.findAll();
   }
+
+  @Get(':id/services')
+async getBarberServices(@Param('id') barberId: string) {
+  return this.barberService.getServicesByBarberId(barberId);
+}
+
 }

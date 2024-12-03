@@ -8,6 +8,7 @@ import { MailService } from 'src/Mail/Mail.service';
 import { randomBytes } from 'crypto'; // Import randomBytes here
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
+import { Service } from 'src/Service/service.schema';
 
 
 
@@ -16,6 +17,8 @@ export class BarberService {
   private googleClient: OAuth2Client;
   constructor(
     @InjectModel(Barber.name) private barberModel: Model<Barber>,
+    @InjectModel(Service.name) private serviceModel: Model<Service>, // Inject the Service model
+
     private mailService: MailService,
     private jwtService: JwtService,
 
@@ -143,6 +146,30 @@ export class BarberService {
     return { token, barber };
   }
 
+  async getServicesByBarberId(barberId: string): Promise<Service[]> {
+    const barber = await this.barberModel.findOne({ barber_id: barberId }).exec();
 
+    if (!barber) {
+      throw new NotFoundException(`Barber with ID ${barberId} not found`);
+    }
+
+    // Array to store the services
+    const services = [];
+
+    // Loop through the service IDs and fetch the service details
+    for (const serviceId of barber.services) {
+      const service = await this.findOnee(serviceId.toString()); // Use the findOne method
+      services.push(service);  // Add service to the array
+    }
+
+    return services; // Return the array of services
+  }
+
+  // Method to find a service by its ID
+  async findOnee(serviceId: string): Promise<Service> {
+    const service = await this.serviceModel.findOne({ service_id: serviceId }).exec();
+    if (!service) throw new NotFoundException(`Service with ID ${serviceId} not found`);
+    return service;
+  }
   
 }
